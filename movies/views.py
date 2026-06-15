@@ -32,25 +32,30 @@ def cleanup_expired_bookings():
     Utility task that finds pending payment orders older than 10 minutes
     and releases the held seats and marks bookings/orders as expired.
     """
-    threshold = timezone.now() - timedelta(minutes=2)
-    expired_orders = PaymentOrder.objects.filter(status=PaymentOrder.Status.PENDING, created_at__lt=threshold)
-    for order in expired_orders:
-        with transaction.atomic():
-            try:
-                order = PaymentOrder.objects.select_for_update().get(id=order.id)
-                if order.status == PaymentOrder.Status.PENDING:
-                    order.status = PaymentOrder.Status.EXPIRED
-                    # Release the idempotency_key so the same seats can be reserved again
-                    order.idempotency_key = f"{order.idempotency_key}_expired_{order.id}"
-                    order.save(update_fields=['status', 'idempotency_key'])
-                    
-                    # Release associated seats and bookings
-                    bookings = order.bookings.all()
-                    seat_ids = [b.seat_id for b in bookings]
-                    bookings.update(status=Booking.Status.FAILED)
-                    Seat.objects.filter(id__in=seat_ids).update(is_booked=False)
-            except PaymentOrder.DoesNotExist:
-                continue
+    try:
+        threshold = timezone.now() - timedelta(minutes=2)
+        expired_orders = PaymentOrder.objects.filter(status=PaymentOrder.Status.PENDING, created_at__lt=threshold)
+        for order in expired_orders:
+            with transaction.atomic():
+                try:
+                    order = PaymentOrder.objects.select_for_update().get(id=order.id)
+                    if order.status == PaymentOrder.Status.PENDING:
+                        order.status = PaymentOrder.Status.EXPIRED
+                        # Release the idempotency_key so the same seats can be reserved again
+                        order.idempotency_key = f"{order.idempotency_key}_expired_{order.id}"
+                        order.save(update_fields=['status', 'idempotency_key'])
+                        
+                        # Release associated seats and bookings
+                        bookings = order.bookings.all()
+                        seat_ids = [b.seat_id for b in bookings]
+                        bookings.update(status=Booking.Status.FAILED)
+                        Seat.objects.filter(id__in=seat_ids).update(is_booked=False)
+                except PaymentOrder.DoesNotExist:
+                    continue
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Failed to cleanup expired bookings: {e}")
+
 
 
 def movie_list(request):

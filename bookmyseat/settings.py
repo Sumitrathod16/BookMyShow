@@ -173,8 +173,9 @@ LOGGING = {
     },
 }
 
-# Create logs directory if it doesn't exist
-os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
+# Create logs directory if it doesn't exist (skip on Vercel read-only filesystem)
+if os.environ.get('VERCEL') != '1':
+    os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
