@@ -302,6 +302,35 @@ class PaymentIntegrationTests(TestCase):
         self.assertIsNotNone(order2)
         self.assertEqual(order2.status, PaymentOrder.Status.PENDING)
 
+    def test_enqueue_email_for_user_without_email(self):
+        """Test that enqueue_booking_confirmation_email works for a user without an email address."""
+        from .email import enqueue_booking_confirmation_email
+        from .models import EmailLog
+        
+        # Modify self.user to have no email address
+        self.user.email = ''
+        self.user.save()
+        
+        booking = Booking.objects.create(
+            user=self.user,
+            seat=self.seat1,
+            movie=self.movie,
+            theater=self.theater,
+            status=Booking.Status.PENDING
+        )
+        
+        # Enqueue the confirmation email - should not crash
+        res = enqueue_booking_confirmation_email([booking])
+        self.assertIsNone(res)
+        
+        # Verify that an EmailLog was created with a FAILED status and appropriate error message
+        log = EmailLog.objects.filter(user=self.user).first()
+        self.assertIsNotNone(log)
+        self.assertEqual(log.status, EmailLog.Status.FAILED)
+        self.assertEqual(log.email_address, '')
+        self.assertEqual(log.error_message, 'User has no email address')
+
+
 
 
 class SeatConcurrencyAndSchedulerTests(TransactionTestCase):

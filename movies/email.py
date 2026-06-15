@@ -64,7 +64,7 @@ def enqueue_booking_confirmation_email(bookings: List) -> Optional[EmailQueueIte
         EmailLog.objects.create(
             email_queue_item=None,
             user=user,
-            email_address=None,
+            email_address=user.email or '',
             status=EmailLog.Status.FAILED,
             error_message='User has no email address',
             log_level=EmailLog.LogLevel.WARNING,
@@ -127,7 +127,7 @@ def enqueue_booking_confirmation_email(bookings: List) -> Optional[EmailQueueIte
         )
         EmailLog.objects.create(
             user=user,
-            email_address=user.email,
+            email_address=user.email or '',
             status=EmailLog.Status.FAILED,
             error_message=f'Failed to queue email: {str(exc)}',
             log_level=EmailLog.LogLevel.ERROR,
