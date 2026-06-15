@@ -1,0 +1,314 @@
+{% extends "users/basic.html" %}
+
+{% block extra_css %}
+<style>
+  .checkout-container {
+    max-width: 800px;
+    margin: 40px auto;
+  }
+  .glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+  }
+  .checkout-header {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    padding: 30px;
+    position: relative;
+  }
+  .checkout-body {
+    padding: 30px;
+  }
+  .movie-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px dashed #e9ecef;
+  }
+  .summary-item:last-child {
+    border-bottom: none;
+  }
+  .total-price-box {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    border-left: 5px solid #28a745;
+  }
+  .stripe-form-container {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+  }
+  .simulator-btn {
+    transition: all 0.2s ease-in-out;
+    font-weight: 600;
+  }
+  .simulator-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  .timer-display {
+    font-size: 0.9rem;
+    background: #fff3cd;
+    color: #856404;
+    padding: 8px 16px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+  }
+  .spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.2em;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container checkout-container">
+  <div class="glass-card">
+    <!-- Header -->
+    <div class="checkout-header">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <span class="movie-badge mb-2 d-inline-block">Ticket Checkout</span>
+          <h2 class="h3 font-weight-bold mb-1">{{ order.bookings.first.movie.name }}</h2>
+          <p class="mb-0 text-white-50">
+            <i class="far fa-clock"></i> {{ order.bookings.first.theater.name }} &middot; {{ order.bookings.first.theater.time|date:"D, M d" }} at {{ order.bookings.first.theater.time|time:"g:i A" }}
+          </p>
+        </div>
+        <div class="timer-display shadow-sm" id="checkoutTimer">
+          <i class="fas fa-hourglass-start"></i> 
+          <span>Session expires in: <strong id="timer">02:00</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="checkout-body">
+      <div class="row">
+        <!-- Order Summary -->
+        <div class="col-md-6 mb-4 mb-md-0">
+          <h4 class="h5 font-weight-bold mb-3">Order Summary</h4>
+          <div class="card border-0 bg-light p-3 mb-3">
+            <div class="summary-item">
+              <span class="text-muted">Tickets Count:</span>
+              <strong class="text-dark">{{ order.bookings.count }} seat(s)</strong>
+            </div>
+            <div class="summary-item">
+              <span class="text-muted">Selected Seats:</span>
+              <strong class="text-dark">
+                {% for booking in order.bookings.all %}
+                  {{ booking.seat.seat_number }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              </strong>
+            </div>
+            <div class="summary-item">
+              <span class="text-muted">Price Per Ticket:</span>
+              <strong class="text-dark">${{ order.bookings.first.theater.ticket_price|floatformat:2 }}</strong>
+            </div>
+            <div class="summary-item">
+              <span class="text-muted">Booking Reference:</span>
+              <code class="text-primary">{{ order.payment_id|slice:":12" }}...</code>
+            </div>
+          </div>
+          <div class="total-price-box d-flex justify-content-between align-items-center">
+            <span class="font-weight-bold text-muted">Total Amount:</span>
+            <span class="h3 font-weight-bold text-success mb-0">${{ order.amount|floatformat:2 }}</span>
+          </div>
+          
+          <div class="mt-4">
+            <a href="{% url 'payment_cancel' order.payment_id %}" class="btn btn-outline-danger btn-block">
+              <i class="fas fa-times-circle"></i> Cancel Order & Release Seats
+            </a>
+          </div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div class="col-md-6">
+          <h4 class="h5 font-weight-bold mb-3">Payment details</h4>
+          
+          {% if stripe_enabled %}
+          <!-- Stripe Payment Flow -->
+          <div class="stripe-form-container">
+            <form id="payment-form">
+              <div id="payment-element" class="mb-3">
+                <!-- Stripe Elements will insert checkout form here -->
+              </div>
+              <button id="submit" class="btn btn-success btn-lg btn-block mt-3">
+                <div class="spinner-hidden" id="spinner-text">
+                  <i class="fas fa-lock"></i> Pay ${{ order.amount|floatformat:2 }}
+                </div>
+                <div class="spinner-border spinner-border-sm text-light d-none" id="spinner" role="status">
+                  <span class="sr-only">Loading...</span>
+                </div>
+              </button>
+              <div id="error-message" class="text-danger mt-3 text-center small" role="alert"></div>
+            </form>
+          </div>
+          {% else %}
+          <!-- Mock Simulator Flow -->
+          <div class="card border-primary mb-3">
+            <div class="card-header bg-primary text-white py-2 font-weight-bold small">
+              <i class="fas fa-laptop-code"></i> PAYMENT SIMULATOR ACTIVE
+            </div>
+            <div class="card-body py-3">
+              <p class="card-text small text-muted">
+                Since no Stripe Secret Key is set in your <code>.env</code> file, the application is running in secure simulation mode. You can test success, failure, and security signatures below.
+              </p>
+              
+              <hr class="my-3">
+              
+              <div class="d-grid gap-2">
+                <!-- Success -->
+                <button type="button" class="btn btn-success btn-block simulator-btn mb-2" id="simSuccessBtn">
+                  <i class="fas fa-check-circle"></i> Simulate Payment Success
+                </button>
+                
+                <!-- Failure -->
+                <button type="button" class="btn btn-danger btn-block simulator-btn mb-2" id="simFailureBtn">
+                  <i class="fas fa-exclamation-triangle"></i> Simulate Card Declined
+                </button>
+                
+                <!-- timeout -->
+                <button type="button" class="btn btn-warning btn-block simulator-btn" id="simTimeoutBtn">
+                  <i class="fas fa-hourglass-end"></i> Simulate Timeout/Abandon
+                </button>
+              </div>
+
+              <!-- Simulator forms -->
+              <form id="simSuccessForm" method="POST" action="{% url 'simulate_webhook' %}" class="d-none">
+                {% csrf_token %}
+                <input type="hidden" name="payment_id" value="{{ order.payment_id }}">
+                <input type="hidden" name="status" value="success">
+              </form>
+
+              <form id="simFailureForm" method="POST" action="{% url 'simulate_webhook' %}" class="d-none">
+                {% csrf_token %}
+                <input type="hidden" name="payment_id" value="{{ order.payment_id }}">
+                <input type="hidden" name="status" value="failure">
+              </form>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if stripe_enabled %}
+<!-- Stripe JS SDK -->
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+  const stripe = Stripe("{{ stripe_public_key }}");
+  const options = {
+    clientSecret: "{{ stripe_client_secret }}",
+    appearance: { theme: 'stripe' },
+  };
+
+  const elements = stripe.elements(options);
+  const paymentElement = elements.create("payment");
+  paymentElement.mount("#payment-element");
+
+  const form = document.getElementById("payment-form");
+  const submitBtn = document.getElementById("submit");
+  const spinnerText = document.getElementById("spinner-text");
+  const spinner = document.getElementById("spinner");
+  const errorMsg = document.getElementById("error-message");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    submitBtn.disabled = true;
+    spinnerText.classList.add("d-none");
+    spinner.classList.remove("d-none");
+    errorMsg.textContent = "";
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: window.location.origin + "{% url 'profile' %}",
+      },
+    });
+
+    if (error) {
+      errorMsg.textContent = error.message;
+      submitBtn.disabled = false;
+      spinnerText.classList.remove("d-none");
+      spinner.classList.add("d-none");
+    }
+  });
+</script>
+{% else %}
+<script>
+  // Mock Simulator Actions
+  document.getElementById('simSuccessBtn').addEventListener('click', function() {
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verifying with signature...';
+    setTimeout(() => {
+      document.getElementById('simSuccessForm').submit();
+    }, 1000);
+  });
+
+  document.getElementById('simFailureBtn').addEventListener('click', function() {
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing decline...';
+    setTimeout(() => {
+      document.getElementById('simFailureForm').submit();
+    }, 1000);
+  });
+
+  document.getElementById('simTimeoutBtn').addEventListener('click', function() {
+    alert('Simulating page abandonment. We will redirect you to home, and the database cleanup task will release your locked seats after the timeout.');
+    window.location.href = '/';
+  });
+</script>
+{% endif %}
+
+<script>
+  // Countdown Timer logic
+  (function() {
+    const createdAtTime = new Date("{{ order.created_at|date:'c' }}").getTime();
+    const expiryTime = createdAtTime + (2 * 60 * 1000); // 2 minutes
+    
+    function updateTimer() {
+      const now = new Date().getTime();
+      const timeLeft = expiryTime - now;
+      
+      if (timeLeft <= 0) {
+        document.getElementById('timer').textContent = "EXPIRED";
+        document.getElementById('checkoutTimer').className = "timer-display bg-danger text-white shadow-sm";
+        alert("Your checkout session has expired. The seats have been released.");
+        window.location.href = "{% url 'payment_cancel' order.payment_id %}";
+        return;
+      }
+      
+      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+      
+      document.getElementById('timer').textContent = 
+        (minutes < 10 ? "0" + minutes : minutes) + ":" + 
+        (seconds < 10 ? "0" + seconds : seconds);
+    }
+    
+    updateTimer();
+    setInterval(updateTimer, 1000);
+  })();
+</script>
+{% endblock %}

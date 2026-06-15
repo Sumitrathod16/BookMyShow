@@ -1,0 +1,463 @@
+{% extends "users/basic.html" %}
+
+{% block extra_css %}
+<style>
+  :root {
+    --bg-dark: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --primary: #3b82f6;
+    --primary-glow: rgba(59, 130, 246, 0.15);
+    --success: #10b981;
+    --success-glow: rgba(16, 185, 129, 0.15);
+    --warning: #f59e0b;
+    --danger: #ef4444;
+  }
+
+  body {
+    background-color: var(--bg-dark) !important;
+    color: var(--text-primary);
+    font-family: 'Outfit', 'Inter', sans-serif;
+  }
+
+  .dashboard-container {
+    max-width: 1400px;
+    margin: 40px auto;
+    padding: 0 20px;
+  }
+
+  .glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+  }
+
+  .glass-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px 0 rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  .metric-card {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), #6366f1);
+  }
+
+  .metric-card.success-card::before {
+    background: linear-gradient(90deg, var(--success), #34d399);
+  }
+
+  .metric-card.warning-card::before {
+    background: linear-gradient(90deg, var(--warning), #fbbf24);
+  }
+
+  .metric-card.danger-card::before {
+    background: linear-gradient(90deg, var(--danger), #f87171);
+  }
+
+  .metric-value {
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin: 8px 0;
+  }
+
+  .metric-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .chart-container {
+    min-height: 300px;
+    position: relative;
+  }
+
+  .badge-cache {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    font-size: 0.8rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .badge-db {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--primary);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    font-size: 0.8rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .table-dark-custom {
+    background: transparent !important;
+    color: var(--text-primary) !important;
+  }
+
+  .table-dark-custom th {
+    border-bottom: 2px solid var(--card-border) !important;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+
+  .table-dark-custom td {
+    border-bottom: 1px solid var(--card-border) !important;
+    vertical-align: middle;
+  }
+
+  .progress-bar-glow {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    background: linear-gradient(90deg, var(--primary), #6366f1);
+    height: 100%;
+    border-radius: 10px;
+    box-shadow: 0 0 8px var(--primary);
+  }
+
+  /* Fade-in animation */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+  <!-- Top bar / Heading -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+    <div>
+      <h1 class="h2 font-weight-bold mb-1" style="background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Admin Analytics Dashboard</h1>
+      <p class="text-muted mb-0">Real-time optimized aggregation performance across 50,000+ bookings.</p>
+    </div>
+    <div class="mt-3 mt-md-0 d-flex gap-2 align-items-center">
+      <div id="sourceBadge" class="badge-db">
+        <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="width: 8px; height: 8px;"></span>
+        <span id="sourceText">Loading...</span>
+      </div>
+      <button onclick="fetchAnalyticsData(true)" class="btn btn-outline-light btn-sm ml-2">
+        <i class="fas fa-sync-alt"></i> Force Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Row 1: KPI Metrics -->
+  <div class="row mb-4">
+    <!-- Daily Revenue -->
+    <div class="col-md-3 mb-3">
+      <div class="glass-card metric-card success-card h-100">
+        <div class="metric-label">Daily Revenue</div>
+        <div class="metric-value text-success" id="dailyRev">$0.00</div>
+        <div class="small text-muted" id="dailyRevDiff">Today's transactions</div>
+      </div>
+    </div>
+    <!-- Weekly Revenue -->
+    <div class="col-md-3 mb-3">
+      <div class="glass-card metric-card h-100">
+        <div class="metric-label">Weekly Revenue</div>
+        <div class="metric-value text-primary" id="weeklyRev">$0.00</div>
+        <div class="small text-muted">Past 7 days</div>
+      </div>
+    </div>
+    <!-- Monthly Revenue -->
+    <div class="col-md-3 mb-3">
+      <div class="glass-card metric-card h-100">
+        <div class="metric-label">Monthly Revenue</div>
+        <div class="metric-value" id="monthlyRev" style="color: #6366f1;">$0.00</div>
+        <div class="small text-muted">Past 30 days</div>
+      </div>
+    </div>
+    <!-- Cancellation Rate -->
+    <div class="col-md-3 mb-3">
+      <div class="glass-card metric-card danger-card h-100">
+        <div class="metric-label">Cancellation Rate</div>
+        <div class="metric-value text-danger" id="cancelRate">0.00%</div>
+        <div class="small text-muted" id="cancelOrdersCount">Failed / Cancelled / Expired orders</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Main Charts -->
+  <div class="row mb-4">
+    <!-- Peak Hours Line Chart -->
+    <div class="col-lg-8 mb-3">
+      <div class="glass-card h-100">
+        <h5 class="card-title font-weight-bold mb-3">Peak Booking Hours (Hourly distribution)</h5>
+        <div class="chart-container">
+          <canvas id="hoursChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <!-- Order Status Doughnut -->
+    <div class="col-lg-4 mb-3">
+      <div class="glass-card h-100">
+        <h5 class="card-title font-weight-bold mb-3">Order Status Distribution</h5>
+        <div class="chart-container d-flex align-items-center justify-content-center">
+          <canvas id="statusChart" style="max-height: 250px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: Tables & Top Rankings -->
+  <div class="row">
+    <!-- Most Popular Movies -->
+    <div class="col-md-6 mb-3">
+      <div class="glass-card h-100">
+        <h5 class="card-title font-weight-bold mb-3"><i class="fas fa-film text-primary mr-2"></i> Most Popular Movies</h5>
+        <div class="table-responsive">
+          <table class="table table-dark-custom">
+            <thead>
+              <tr>
+                <th>Movie Name</th>
+                <th class="text-right">Confirmed Bookings</th>
+              </tr>
+            </thead>
+            <tbody id="popularMoviesList">
+              <!-- JS Injected -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Busiest Theaters (Occupancy) -->
+    <div class="col-md-6 mb-3">
+      <div class="glass-card h-100">
+        <h5 class="card-title font-weight-bold mb-3"><i class="fas fa-theater-masks text-success mr-2"></i> Busiest Theaters</h5>
+        <div id="busiestTheatersList">
+          <!-- JS Injected -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Academic Explanation Section -->
+  <div class="glass-card mt-4 p-4" style="background: rgba(15, 23, 42, 0.8); border-color: rgba(59, 130, 246, 0.2);">
+    <h4 class="h5 font-weight-bold text-primary mb-3"><i class="fas fa-graduation-cap mr-2"></i> Performance Optimization & Consistency Architecture</h4>
+    <div class="row small text-muted">
+      <div class="col-md-6 mb-3 mb-md-0">
+        <h6 class="text-light font-weight-bold">How Race Conditions are Prevented</h6>
+        <p class="mb-2">
+          During concurrent seat selections, database integrity is protected by performing explicit pessimistic row-level locks using Django's <code>select_for_update()</code> database expression within an atomic transaction.
+        </p>
+        <p class="mb-0">
+          When a request arrives, the row is locked exclusively, forcing simultaneous requests for the same seat to wait. Once the lock is released, subsequent requests double-check the seat status (which has now transitioned to `is_booked = True`) and abort with an IntegrityError.
+        </p>
+      </div>
+      <div class="col-md-6">
+        <h6 class="text-light font-weight-bold">Database Aggregation & Cache Consistency</h6>
+        <p class="mb-2">
+          <strong>Database Aggregation</strong>: Queries calculate totals (like revenue and occupancy rate) entirely at the database layer using SQL <code>SUM</code>, <code>COUNT</code>, and <code>AVG</code> functions. This avoids loading large datasets into Django application memory.
+        </p>
+        <p class="mb-0">
+          <strong>Caching Strategy</strong>: The analytics API uses Django's local memory caching backend (LocMemCache) configured for 60 seconds. This avoids query performance degradation during high-traffic intervals while ensuring near-real-time updates.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  let hoursChart = null;
+  let statusChart = null;
+
+  function formatCurrency(val) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+  }
+
+  function fetchAnalyticsData(force = false) {
+    const sourceText = document.getElementById('sourceText');
+    const sourceBadge = document.getElementById('sourceBadge');
+    
+    sourceText.textContent = "Updating...";
+    sourceBadge.className = "badge-db";
+
+    let url = "{% url 'admin_analytics_api' %}";
+    if (force) {
+      url += "?refresh=true"; // Can handle cache bypass in backend if wanted, or rely on normal cache timeout
+    }
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        // Set metrics
+        document.getElementById('dailyRev').textContent = formatCurrency(data.revenue.daily);
+        document.getElementById('weeklyRev').textContent = formatCurrency(data.revenue.weekly);
+        document.getElementById('monthlyRev').textContent = formatCurrency(data.revenue.monthly);
+        document.getElementById('cancelRate').textContent = data.order_stats.cancellation_rate + "%";
+        document.getElementById('cancelOrdersCount').textContent = 
+          `${data.order_stats.cancelled + data.order_stats.failed + data.order_stats.expired} cancelled/failed out of ${data.order_stats.total} total orders`;
+
+        // Update badge source
+        if (data.source === 'Cache') {
+          sourceBadge.className = "badge-cache";
+          sourceText.textContent = `Cached (Calculated at ${data.cache_time.split(' ')[1]})`;
+        } else {
+          sourceBadge.className = "badge-db";
+          sourceText.textContent = `Database Query (Executed in Real-time)`;
+        }
+
+        // Render Popular Movies Table
+        const popularMoviesList = document.getElementById('popularMoviesList');
+        popularMoviesList.innerHTML = '';
+        if (data.popular_movies.length === 0) {
+          popularMoviesList.innerHTML = '<tr><td colspan="2" class="text-center text-muted">No data available</td></tr>';
+        } else {
+          data.popular_movies.forEach(movie => {
+            popularMoviesList.innerHTML += `
+              <tr>
+                <td class="font-weight-bold text-light">${movie.movie__name}</td>
+                <td class="text-right text-success font-weight-bold">${movie.booking_count.toLocaleString()}</td>
+              </tr>
+            `;
+          });
+        }
+
+        // Render Busiest Theaters Progress Bars
+        const busiestTheatersList = document.getElementById('busiestTheatersList');
+        busiestTheatersList.innerHTML = '';
+        if (data.busiest_theaters.length === 0) {
+          busiestTheatersList.innerHTML = '<p class="text-center text-muted">No data available</p>';
+        } else {
+          data.busiest_theaters.forEach(theater => {
+            const occupancy = theater.occupancy_rate.toFixed(1);
+            busiestTheatersList.innerHTML += `
+              <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="font-weight-bold text-light">${theater.name}</span>
+                  <span class="text-muted small">${theater.booked_seats}/${theater.total_seats} seats (${occupancy}%)</span>
+                </div>
+                <div class="progress-bar-glow">
+                  <div class="progress-bar-fill" style="width: ${occupancy}%;"></div>
+                </div>
+              </div>
+            `;
+          });
+        }
+
+        // Render hours line chart
+        const hoursLabels = Array.from({ length: 24 }, (_, i) => i + ":00");
+        const hoursData = Array(24).fill(0);
+        data.peak_hours.forEach(item => {
+          if (item.hour !== null) {
+            hoursData[item.hour] = item.count;
+          }
+        });
+
+        if (hoursChart) hoursChart.destroy();
+        const ctxHours = document.getElementById('hoursChart').getContext('2d');
+        hoursChart = new Chart(ctxHours, {
+          type: 'line',
+          data: {
+            labels: hoursLabels,
+            datasets: [{
+              label: 'Confirmed Bookings',
+              data: hoursData,
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
+              y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } }
+            }
+          }
+        });
+
+        // Render status doughnut chart
+        if (statusChart) statusChart.destroy();
+        const ctxStatus = document.getElementById('statusChart').getContext('2d');
+        statusChart = new Chart(ctxStatus, {
+          type: 'doughnut',
+          data: {
+            labels: ['Completed', 'Failed', 'Cancelled', 'Expired'],
+            datasets: [{
+              data: [
+                data.order_stats.completed,
+                data.order_stats.failed,
+                data.order_stats.cancelled,
+                data.order_stats.expired
+              ],
+              backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#6b7280'],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: '#94a3b8', font: { family: 'Inter', size: 12 } }
+              }
+            }
+          }
+        });
+
+      })
+      .catch(err => {
+        console.error("Error loading analytics data", err);
+        sourceText.textContent = "Error Loading";
+        sourceBadge.className = "badge-db bg-danger text-white";
+      });
+  }
+
+  // Initial load
+  document.addEventListener("DOMContentLoaded", function() {
+    fetchAnalyticsData();
+  });
+</script>
+{% endblock %}

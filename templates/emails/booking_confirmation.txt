@@ -1,0 +1,51 @@
+===============================================
+BOOKING CONFIRMATION
+===============================================
+
+Hello {{ user_name }},
+
+Your booking has been confirmed successfully! Thank you for choosing BookMySeat.
+
+===============================================
+SHOW DETAILS
+===============================================
+
+Movie:              {{ movie_name }}
+Theater:            {{ theater_name }}
+Date:               {{ show_date }}
+Time:               {{ show_time_formatted }}
+Seats:              {{ seat_numbers|join:", " }}
+Total Seats:        {{ total_seats }}
+
+===============================================
+PAYMENT INFORMATION
+===============================================
+
+Reference ID:       {{ payment_id }}
+Booking Time:       {{ booking_time_formatted }}
+
+===============================================
+IMPORTANT INFORMATION
+===============================================
+
+• Please arrive at the theater 15 minutes before the show time
+• Bring a valid ID along with your booking confirmation
+• Take a screenshot or print this email for offline access
+• Your seats are reserved under the booking reference ID above
+
+===============================================
+SECURITY NOTICE
+===============================================
+
+This email contains your booking details. We never share payment
+card information via email. Do not forward this email to anyone else.
+Do not reply to this automated email.
+
+===============================================
+SUPPORT
+===============================================
+
+Have questions? Contact our support team at {{ support_email }}
+
+Thank you for booking with BookMySeat!
+© 2024 BookMySeat. All Rights Reserved.

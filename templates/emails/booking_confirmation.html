@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmation - BookMySeat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px 20px;
+        }
+        
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .greeting strong {
+            font-weight: 600;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .details-box {
+            background-color: #f9f9f9;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #667eea;
+            min-width: 120px;
+        }
+        
+        .detail-value {
+            color: #555;
+            word-break: break-word;
+        }
+        
+        .seats-list {
+            display: inline-block;
+            background-color: #e8eef7;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-weight: 500;
+            color: #667eea;
+        }
+        
+        .info-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #1565c0;
+        }
+        
+        .info-box strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        
+        .action-button {
+            display: inline-block;
+            background-color: #667eea;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 600;
+            margin: 15px 0;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        
+        .action-button:hover {
+            background-color: #764ba2;
+        }
+        
+        .footer {
+            background-color: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .footer p {
+            margin-bottom: 10px;
+        }
+        
+        .footer-divider {
+            border-top: 1px solid #ddd;
+            margin: 15px 0;
+        }
+        
+        .support-link {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .support-link:hover {
+            text-decoration: underline;
+        }
+        
+        .security-notice {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #856404;
+            margin-top: 20px;
+        }
+        
+        .payment-id-box {
+            background-color: #f0f0f0;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            border-radius: 4px;
+            word-break: break-all;
+            font-size: 12px;
+            color: #333;
+            margin-top: 8px;
+        }
+        
+        @media (max-width: 600px) {
+            .email-container {
+                border-radius: 0;
+            }
+            
+            .header {
+                padding: 30px 15px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+            }
+            
+            .detail-label {
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>✓ Booking Confirmed</h1>
+            <p>Your ticket is booked and ready!</p>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Greeting -->
+            <div class="greeting">
+                Hello <strong>{{ user_name }}</strong>,<br>
+                Your booking has been confirmed successfully. Thank you for choosing BookMySeat!
+            </div>
+            
+            <!-- Show Details Section -->
+            <div class="section">
+                <div class="section-title">Show Details</div>
+                <div class="details-box">
+                    <div class="detail-row">
+                        <span class="detail-label">Movie</span>
+                        <span class="detail-value"><strong>{{ movie_name }}</strong></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Theater</span>
+                        <span class="detail-value">{{ theater_name }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Date</span>
+                        <span class="detail-value">{{ show_date }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Time</span>
+                        <span class="detail-value">{{ show_time_formatted }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Seats</span>
+                        <span class="detail-value"><span class="seats-list">{{ seat_numbers|join:", " }}</span></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Total Seats</span>
+                        <span class="detail-value">{{ total_seats }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Payment Information Section -->
+            <div class="section">
+                <div class="section-title">Payment Information</div>
+                <div class="details-box">
+                    <div class="detail-row">
+                        <span class="detail-label">Reference ID</span>
+                        <span class="detail-value">
+                            <strong>{{ payment_id }}</strong>
+                            <div class="payment-id-box" title="Full Payment ID">{{ payment_id }}</div>
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Booking Time</span>
+                        <span class="detail-value">{{ booking_time_formatted }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Important Information Box -->
+            <div class="info-box">
+                <strong>📌 Important Information:</strong>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Please arrive at the theater 15 minutes before the show time</li>
+                    <li>Bring a valid ID along with your booking confirmation</li>
+                    <li>Take a screenshot or print this email for offline access</li>
+                    <li>Your seats are reserved under the booking reference ID above</li>
+                </ul>
+            </div>
+            
+            <!-- Security Notice -->
+            <div class="security-notice">
+                <strong>🔒 Security Note:</strong> This email contains your booking details. 
+                We never share payment card information via email. Do not forward this email to anyone else.
+            </div>
+            
+            <!-- Support Section -->
+            <div class="section">
+                <p style="font-size: 14px; color: #666; margin-bottom: 15px;">
+                    Have questions? Contact our support team at 
+                    <a href="mailto:{{ support_email }}" class="support-link">{{ support_email }}</a>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Thank you for booking with <strong>BookMySeat</strong>!</p>
+            <p style="font-size: 12px; color: #999;">
+                This is an automated email. Please do not reply directly to this message.
+            </p>
+            <div class="footer-divider"></div>
+            <p style="font-size: 11px;">
+                BookMySeat © 2024 | All Rights Reserved
+            </p>
+            <p style="font-size: 11px; margin-top: 10px;">
+                <a href="#" class="support-link">Privacy Policy</a> | 
+                <a href="#" class="support-link">Terms of Service</a> | 
+                <a href="#" class="support-link">Contact Us</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

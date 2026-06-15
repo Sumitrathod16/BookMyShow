@@ -1,85 +1,72 @@
-{% extends "users/basic.html" %} {% block content %}
-<div class="container mt-5">
+{% extends "users/basic.html" %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
   <div class="row">
     <div class="col-lg-8 mx-auto">
-      <!-- Movie and Theater Info -->
-      <div class="card mb-4">
+      <div class="card mb-4 shadow-sm">
         <div class="card-body">
-          <div
-            class="d-flex justify-content-between align-items-center flex-wrap"
-          >
-            <div>
-              <h4 class="card-title">{{ theaters.movie.name }}</h4>
-              <p class="card-text text-muted">
-                {{ theaters.name }} | {{ theaters.time }}
-              </p>
-            </div>
-            <div class="mt-2 mt-sm-0">
-              <button class="btn btn-outline-primary me-2 mb-2 mb-sm-0">
-                2D
-              </button>
-              <button class="btn btn-outline-primary me-2 mb-2 mb-sm-0">
-                3D
-              </button>
-              <button class="btn btn-outline-primary mb-2 mb-sm-0">
-                IMAX 3D
-              </button>
-              <button class="btn btn-outline-primary mb-2 mb-sm-0">
-                {{seats|length}} Tickets
-              </button>
-            </div>
-          </div>
+          <h4 class="card-title mb-1">{{ theater.movie.name }}</h4>
+          <p class="card-text text-muted mb-0">
+            {{ theater.name }} &middot; {{ theater.time|date:"D, M d" }} at {{ theater.time|time:"g:i A" }}
+          </p>
         </div>
       </div>
 
-      <!-- Seat Selection -->
-      <div class="card">
+      <div class="card shadow-sm">
         <div class="card-body">
           <h5 class="card-title text-center mb-4">Select Your Seats</h5>
+
+          {% if error %}
+          <div class="alert alert-danger" role="alert">{{ error }}</div>
+          {% endif %}
+
           <div class="screen">All eyes this way please!</div>
 
-          <form method="POST">
+          <form method="POST" id="seatForm">
             {% csrf_token %}
-            <div class="d-flex justify-content-center flex-wrap mb-4">
+            <div class="mb-4" id="seatMap">
+              {% regroup seats by seat_number|slice:":1" as grouped %}
               {% for seat in seats %}
-              <div class="seat {% if seat.is_booked %}sold{% endif %}">
+              <div class="seat {% if seat.is_booked %}sold{% endif %}" data-seat-id="{{ seat.id }}">
                 {% if not seat.is_booked %}
                 <input
                   type="checkbox"
                   name="seats"
                   value="{{ seat.id }}"
-                  class="d-none"
+                  class="d-none seat-checkbox"
                   id="seat-{{ seat.id }}"
                 />
                 <label
                   for="seat-{{ seat.id }}"
-                  class="w-100 h-100 d-flex align-items-center justify-content-center"
-                  >{{ seat.seat_number }}</label
-                >
-                {% else %} {{ seat.seat_number }} {% endif %}
+                  class="w-100 h-100 d-flex align-items-center justify-content-center mb-0"
+                >{{ seat.seat_number }}</label>
+                {% else %}
+                <span class="d-flex align-items-center justify-content-center w-100 h-100">{{ seat.seat_number }}</span>
+                {% endif %}
               </div>
               {% endfor %}
             </div>
 
-            <!-- Seat Legend -->
-            <div class="d-flex justify-content-center mb-4">
-              <div class="d-flex align-items-center me-4">
-                <div class="seat" style="background-color: white"></div>
-                <span class="ms-2">Available</span>
+            <div class="d-flex justify-content-center flex-wrap mb-3">
+              <div class="d-flex align-items-center mr-4 mb-2">
+                <div class="seat" style="background-color: white; pointer-events: none;"></div>
+                <span class="ml-2">Available</span>
               </div>
-              <div class="d-flex align-items-center me-4">
-                <div class="seat selected"></div>
-                <span class="ms-2">Selected</span>
+              <div class="d-flex align-items-center mr-4 mb-2">
+                <div class="seat selected" style="pointer-events: none;"></div>
+                <span class="ml-2">Selected</span>
               </div>
-              <div class="d-flex align-items-center">
-                <div class="seat sold"></div>
-                <span class="ms-2">Sold</span>
+              <div class="d-flex align-items-center mb-2">
+                <div class="seat sold" style="pointer-events: none;"></div>
+                <span class="ml-2">Sold</span>
               </div>
             </div>
 
-            <!-- Book Button -->
+            <p class="text-center text-muted mb-3" id="seatSummary">No seats selected</p>
+
             <div class="text-center">
-              <button type="submit" class="btn btn-success btn-lg">
+              <button type="submit" class="btn btn-success btn-lg" id="bookBtn" disabled>
                 Book Selected Seats
               </button>
             </div>
@@ -89,82 +76,66 @@
     </div>
   </div>
 </div>
+
 <style>
-  body {
-    font-family: Arial, sans-serif;
-  }
-  .seat {
-    width: 30px;
-    height: 30px;
-    border: 1px solid #28a745;
-    margin: 3px;
-    text-align: center;
-    line-height: 30px;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.3s, color 0.3s;
-  }
-  .seat:hover {
-    background-color: #28a745;
-    color: white;
-  }
-  .seat.selected {
-    background-color: #28a745;
-    color: white;
-  }
-  .seat.sold {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
-  .screen {
-    margin: 20px 0;
-    background-color: #ccc;
-    height: 50px;
-    text-align: center;
-    line-height: 50px;
-    color: #666;
-  }
-  .footer {
-    background-color: #333;
-    color: #ccc;
-    padding: 20px 0;
-  }
-  .footer a {
-    color: #ccc;
-    text-decoration: none;
-  }
-  .footer a:hover {
-    text-decoration: underline;
-  }
-  .footer .col-md-2,
-  .footer .col-md-3 {
-    margin-bottom: 20px;
-  }
-  .footer .social-icons i {
-    font-size: 20px;
-    margin: 0 10px;
+  #seatMap {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 100%;
   }
 </style>
-<!-- <h1>Seats for {{theater.name}} - {{theater.movie.name}}</h1>
-{% if error %}
-<p style="color:red;">{{error}}</p>
-{% endif %}
-<form method="POST">
-    {% csrf_token %}
-    <ul>
-        {% for seat in seats %}
-        <li>
-          Seats{{seat.seat_number}}:
-          {% if seat.is_booked %}
-          <strong>Booked seat {{seat.seat_number}}</strong>
-          {% else %}
-          <input type="checkbox" name="seats" value="{{seat.id}}">
-          <strong>Available seat {{seat.seat_number}}</strong>
-          {% endif%}
-        </li>
-        {% endfor %}
-      </ul>
-      <button type="submit">Book selected seats</button>
-</form> -->
+{% endblock %}
 
+{% block extra_js %}
+<script>
+  (function () {
+    var maxSeats = 10;
+    var checkboxes = document.querySelectorAll('.seat-checkbox');
+    var summary = document.getElementById('seatSummary');
+    var bookBtn = document.getElementById('bookBtn');
+
+    function updateSummary() {
+      var selected = document.querySelectorAll('.seat-checkbox:checked');
+      var count = selected.length;
+      bookBtn.disabled = count === 0;
+      if (count === 0) {
+        summary.textContent = 'No seats selected';
+      } else {
+        var labels = [];
+        selected.forEach(function (cb) {
+          labels.push(cb.nextElementSibling ? cb.nextElementSibling.textContent.trim() : '');
+        });
+        summary.textContent = count + ' seat(s) selected: ' + labels.join(', ');
+      }
+    }
+
+    checkboxes.forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        var seat = this.closest('.seat');
+        if (this.checked) {
+          var selectedCount = document.querySelectorAll('.seat-checkbox:checked').length;
+          if (selectedCount > maxSeats) {
+            this.checked = false;
+            alert('You can select up to ' + maxSeats + ' seats at a time.');
+            return;
+          }
+          seat.classList.add('selected');
+        } else {
+          seat.classList.remove('selected');
+        }
+        updateSummary();
+      });
+    });
+
+    document.getElementById('seatForm').addEventListener('submit', function (e) {
+      if (document.querySelectorAll('.seat-checkbox:checked').length === 0) {
+        e.preventDefault();
+        alert('Please select at least one seat.');
+      }
+    });
+
+    updateSummary();
+  })();
+</script>
 {% endblock %}

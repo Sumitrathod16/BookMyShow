@@ -1,188 +1,601 @@
-{% extends "users/basic.html" %} 
-{% block content %}
+{% extends "users/basic.html" %}
+
+{% block extra_css %}
 <style>
-    /* Styling */
-    body {
-  font-family: Arial, sans-serif;
-  background-color: #f8f9fa;
-  color: #333;
-  margin: 0;
-  padding: 0;
-}
-
-.container {
-  padding: 20px;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.movie-title {
-  font-size: 28px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-/* Theatre Info Styling */
-.theatre-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  margin-bottom: 15px;
-  flex-wrap: wrap; /* Responsive wrapping */
-}
-
-.theatre-info strong {
-  font-size: 18px;
-  flex: 1;
-}
-
-/* Info Icons Styling */
-.info-icons {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 10px; /* Space between icons */
-  margin-top: 10px;
-  flex: 2;
-}
-
-.info-icons i {
-  margin-right: 5px;
-  font-size: 18px;
-}
-
-.info-section {
-  flex: 1;
-  text-align: right;
-}
-
-/* Show Times Styling */
-.show-times {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 0;
-  flex-wrap: wrap; /* Responsive wrapping */
-}
-
-.time-box {
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 10px 20px;
-  text-align: center;
-  background-color: #f1f1f1;
-  margin-bottom: 10px;
-  flex: 1;
-  min-width: 100px;
-  transition: transform 0.3s ease, background-color 0.3s ease;
-}
-
-.time-box:hover {
-  transform: scale(1.05);
-  background-color: #28a745;
-  color: white;
-}
-
-.time-box span {
-  display: block;
-  font-size: 12px;
-  color: black;
-}
-.time-box span:hover {
-  color: white;
-}
-
-/* Non-Cancellable Styling */
-.non-cancellable {
-  color: #ffc107;
-  font-size: 12px;
-  margin-top: 20px;
-  display: flex;
-  align-items: center;
-}
-
-.non-cancellable i {
-  margin-right: 5px;
-}
-
-/* Responsive Styling */
-@media (max-width: 768px) {
-  .theatre-info {
-    flex-direction: column;
-    align-items: flex-start;
+  /* Premium Movie Hero Styles */
+  .movie-hero {
+    position: relative;
+    overflow: hidden;
+    background-color: #0c0e12;
+    padding: 60px 0;
+    color: #ffffff;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  .info-section {
-    text-align: left;
-    margin-top: 10px;
+  .hero-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: cover;
+    background-position: center;
+    filter: blur(25px) brightness(0.25);
+    transform: scale(1.1); /* Prevent edge artifacting from blur */
+    z-index: 1;
   }
 
-  .show-times {
-    justify-content: space-between;
+  .hero-content {
+    position: relative;
+    z-index: 2;
   }
 
-  .time-box {
-    flex: 1 1 100%;
+  .poster-container {
+    perspective: 1000px;
+  }
+
+  .movie-poster {
+    border: 4px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s ease;
+    max-height: 350px;
+    object-fit: cover;
+  }
+
+  .movie-poster:hover {
+    transform: translateY(-8px) rotateY(-3deg);
+    box-shadow: 0 22px 40px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 255, 255, 0.1);
+  }
+
+  .movie-detail-title {
+    font-size: 38px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    background: linear-gradient(135deg, #ffffff 60%, #e2e8f0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .rating-badge {
+    background: rgba(253, 197, 0, 0.2);
+    border: 1px solid #fdc500;
+    color: #ffc700;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 0 10px rgba(253, 197, 0, 0.1);
+  }
+
+  .movie-meta-item {
+    font-size: 15px;
+    color: #cbd5e1;
     margin-bottom: 10px;
   }
-}
-  </style>
-  
-  <body>
-    <div class="container">
-      <!-- Movie Title -->
-      <div class="movie-title">Movie - {{ movie.name }}</div>
-  
-      <!-- Conditional Check for Theaters -->
-      {% if theaters %}
-        <!-- Theater List and Showtimes -->
-        {% for theater in theaters %}
-        <div class="theatre-info">
-          <div>
-            <strong>{{ theater.name }} Theater</strong>
-            <div class="info-icons mt-2">
-              <i class="fas fa-mobile-alt text-success"></i> M-Ticket
-              <i class="fas fa-utensils text-warning ms-3"></i> Food & Beverage
-              <i class="fas fa-parking text-primary ms-3"></i> Parking Available
-              <i class="fas fa-wheelchair text-info ms-3"></i> Wheelchair Access
-              <i class="fas fa-glasses text-danger ms-3"></i> 3D Show Available
-            </div>
+
+  .movie-desc {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #cbd5e1;
+    max-width: 700px;
+  }
+
+  .tag-pill {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #f1f5f9;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: inline-block;
+    transition: all 0.2s ease;
+  }
+
+  .tag-pill:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+  }
+
+  /* Video Trailer Section Styling */
+  .trailer-section {
+    max-width: 860px;
+    margin: 40px auto;
+  }
+
+  .section-title-premium {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 10px;
+  }
+
+  .trailer-card {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background-color: #000;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .trailer-facade {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    transition: transform 0.5s ease;
+  }
+
+  .facade-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.5);
+    transition: background 0.3s ease;
+  }
+
+  .trailer-facade:hover .facade-overlay {
+    background: rgba(15, 23, 42, 0.3);
+  }
+
+  .play-btn {
+    background: #ff0000;
+    background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+    border: none;
+    border-radius: 50%;
+    width: 76px;
+    height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 28px;
+    padding-left: 6px; /* perfectly offset for visual centering of play icon */
+    cursor: pointer;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+    box-shadow: 0 4px 20px rgba(255, 0, 0, 0.4);
+  }
+
+  .trailer-facade:hover .play-btn {
+    transform: scale(1.15) rotate(5deg);
+    box-shadow: 0 6px 25px rgba(255, 0, 0, 0.6), 0 0 0 10px rgba(255, 0, 0, 0.15);
+  }
+
+  .play-label {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    transition: transform 0.3s ease;
+  }
+
+  .trailer-facade:hover .play-label {
+    transform: translateY(2px);
+  }
+
+  .trailer-video-container {
+    width: 100%;
+    height: 100%;
+  }
+
+  .trailer-video-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  .trailer-loader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #0b0e14;
+    z-index: 5;
+  }
+
+  .trailer-fallback {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 30px;
+    height: 100%;
+    color: #f1f5f9;
+  }
+
+  /* Showtimes / Theaters styling */
+  .theatre-section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 40px;
+    margin-bottom: 20px;
+  }
+
+  .theatre-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .theatre-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  .theatre-header {
+    padding: 20px;
+    border-bottom: 1px dashed #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .theatre-name {
+    font-size: 19px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0;
+  }
+
+  .theatre-facilities {
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  .theatre-facilities span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .showtimes-container {
+    padding: 20px;
+  }
+
+  .time-badge {
+    display: inline-flex;
+    flex-direction: column;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 24px;
+    text-align: center;
+    background-color: #f8fafc;
+    min-width: 140px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #334155;
+    text-decoration: none !important;
+  }
+
+  .time-badge:hover {
+    background-color: #007bff;
+    border-color: #0056b3;
+    color: #ffffff;
+    transform: scale(1.04);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  }
+
+  .time-badge .badge-time {
+    font-weight: 700;
+    font-size: 17px;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .time-badge .badge-date {
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.85;
+  }
+
+  .time-badge .badge-book {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+    opacity: 0.9;
+  }
+
+  .time-badge:hover .badge-book {
+    color: #ffffff;
+  }
+
+  .disclaimer-box {
+    margin-top: 40px;
+    padding: 15px 20px;
+    background-color: #fefbeb;
+    border-left: 4px solid #d97706;
+    border-radius: 0 8px 8px 0;
+    color: #78350f;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+</style>
+{% endblock %}
+
+{% block before_content %}
+<div class="movie-hero mb-4">
+  <div class="hero-backdrop" style="background-image: url('{{ movie.image.url }}');"></div>
+  <div class="container hero-content">
+    <div class="row align-items-center">
+      <!-- Left side: Movie Poster -->
+      <div class="col-lg-3 col-md-4 text-center text-md-left mb-4 mb-md-0">
+        <div class="poster-container">
+          <img src="{{ movie.image.url }}" alt="{{ movie.name }}" class="movie-poster img-fluid rounded">
+        </div>
+      </div>
+      <!-- Right side: Details -->
+      <div class="col-lg-9 col-md-8 text-left">
+        <div class="mb-3">
+          <span class="rating-badge">
+            <i class="fas fa-star"></i> {{ movie.rating }}/10
+          </span>
+        </div>
+        
+        <h1 class="movie-detail-title mb-3">{{ movie.name }}</h1>
+        
+        <div class="movie-meta-item">
+          <strong>Cast: </strong> <span>{{ movie.cast }}</span>
+        </div>
+
+        {% if movie.genres.all %}
+        <div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
+          <span class="mr-2 font-weight-bold">Genres:</span>
+          {% for genre in movie.genres.all %}
+            <span class="tag-pill mr-1 mb-1">{{ genre.name }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if movie.languages.all %}
+        <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+          <span class="mr-2 font-weight-bold">Languages:</span>
+          {% for language in movie.languages.all %}
+            <span class="tag-pill mr-1 mb-1">{{ language.name }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if movie.description %}
+        <div class="mt-3">
+          <h5 class="text-white font-weight-bold mb-2">Description</h5>
+          <p class="movie-desc">{{ movie.description }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="py-2">
+
+  <!-- Trailer Embedding Section -->
+  {% if movie.youtube_video_id %}
+  <div class="trailer-section">
+    <h3 class="section-title-premium mb-4"><i class="fab fa-youtube text-danger mr-2"></i>Official Trailer</h3>
+    <div class="trailer-card">
+      
+      <!-- Preview Facade (Only image and play button overlay) -->
+      <div id="trailer-facade" class="trailer-facade" style="background-image: url('https://img.youtube.com/vi/{{ movie.youtube_video_id }}/hqdefault.jpg');" role="button" tabindex="0" aria-label="Play Trailer for {{ movie.name }}">
+        <div class="facade-overlay d-flex flex-column align-items-center justify-content-center">
+          <button id="play-trailer-btn" class="play-btn" aria-label="Play video" data-video-id="{{ movie.youtube_video_id }}">
+            <i class="fas fa-play"></i>
+          </button>
+          <span class="play-label mt-3">Play Trailer</span>
+        </div>
+      </div>
+      
+      <!-- Spinner Loader (Shown while loading script & player) -->
+      <div id="trailer-loader" class="trailer-loader align-items-center justify-content-center flex-column" style="display: none;">
+        <div class="spinner-border text-danger" role="status" style="width: 3.5rem; height: 3.5rem;">
+          <span class="sr-only">Loading trailer...</span>
+        </div>
+        <span class="text-white mt-3 font-weight-bold">Initializing Player...</span>
+      </div>
+
+      <!-- Real Video Container (Swapped in) -->
+      <div id="trailer-video-container" class="trailer-video-container" style="display: none;">
+        <div id="youtube-player"></div>
+      </div>
+
+      <!-- Graceful Fallback (Shown on errors) -->
+      <div id="trailer-fallback" class="trailer-fallback" style="display: none;">
+        <i class="fas fa-exclamation-circle text-warning fa-3x mb-3"></i>
+        <h4 class="font-weight-bold">Trailer Unavailable</h4>
+        <p class="text-center text-muted mb-4" style="max-width: 500px;">
+          This video cannot be played directly within our player (it may be private, removed, or restricted by YouTube).
+        </p>
+        <a href="https://www.youtube.com/results?search_query={{ movie.name|urlencode }}+official+trailer" target="_blank" rel="noopener noreferrer" class="btn btn-danger btn-lg px-4 shadow">
+          <i class="fab fa-youtube mr-2"></i>Search on YouTube
+        </a>
+      </div>
+
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Theaters & Showtimes Section -->
+  <div class="theatre-section-title mt-5">
+    <i class="fas fa-film mr-2 text-primary"></i>Available Showtimes
+  </div>
+
+  {% if theaters %}
+    {% for theater in theaters %}
+      <div class="theatre-card">
+        <div class="theatre-header">
+          <h4 class="theatre-name">{{ theater.name }}</h4>
+          <div class="theatre-facilities">
+            <span><i class="fas fa-mobile-alt text-success"></i> M-Ticket</span>
+            <span><i class="fas fa-utensils text-warning"></i> F&amp;B Available</span>
+            <span><i class="fas fa-wheelchair text-info"></i> Accessible</span>
           </div>
         </div>
-  
-        <div class="show-times">
-          <div class="time-box">
-            {{ theater.time }}
-            <a href="{% url 'book_seats' theater.id %}">
-              <span>Book Now</span>
+        <div class="showtimes-container">
+          <div class="d-flex flex-wrap gap-3">
+            <a href="{% url 'book_seats' theater.id %}" class="time-badge">
+              <span class="badge-time">{{ theater.time|time:"g:i A" }}</span>
+              <span class="badge-date">{{ theater.time|date:"D, M d" }}</span>
+              <span class="badge-book">Book Now</span>
             </a>
           </div>
         </div>
-        {% endfor %}
-      {% else %}
-        <!-- Message when no theaters are available -->
-        <div class="no-theaters mt-4">
-          <p>Sorry, no theaters are available for this movie at the moment.</p>
-        </div>
-      {% endif %}
-  
-      <div class="non-cancellable mt-4">
-        <i class="fas fa-circle text-warning"></i> Non-cancellable
       </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-warning text-center py-4 rounded-lg border-warning shadow-sm">
+      <i class="fas fa-exclamation-triangle fa-2x mb-2 text-warning"></i>
+      <p class="mb-0 font-weight-bold text-dark">Sorry, no theaters or showtimes are available for this movie at the moment.</p>
+      <p class="small text-muted mb-0 mt-1">Please check back again later or browse other movies.</p>
     </div>
-  </body>
-<!-- <h1>Theater for {{movie.name}}</h1>
-<ul>
-  {% for theater in theaters %}
-  <li>
-    <strong>{{theater.name}}</strong>{{theater.time}}
-    <a href="{% url 'book_seats' theater.id %}">View Seats</a>
-  </li>
-  {% endfor %}
-</ul> -->
+  {% endif %}
+
+  <div class="disclaimer-box">
+    <i class="fas fa-info-circle"></i>
+    <span>Important Note: Tickets once booked are non-cancellable and non-refundable.</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const playBtn = document.getElementById('play-trailer-btn');
+    const facade = document.getElementById('trailer-facade');
+    if (!playBtn || !facade) return;
+
+    const loader = document.getElementById('trailer-loader');
+    const videoContainer = document.getElementById('trailer-video-container');
+    const fallback = document.getElementById('trailer-fallback');
+    const videoId = playBtn.getAttribute('data-video-id');
+
+    let player = null;
+    let safetyTimeoutId = null;
+
+    // Helper to transition UI to fallback state
+    function showFallback() {
+      if (safetyTimeoutId) {
+        clearTimeout(safetyTimeoutId);
+        safetyTimeoutId = null;
+      }
+      loader.style.display = 'none';
+      videoContainer.style.display = 'none';
+      facade.style.display = 'none';
+      fallback.style.display = 'flex';
+    }
+
+    // Helper to initialize the player once YouTube scripts load
+    function initPlayer() {
+      try {
+        player = new YT.Player('youtube-player', {
+          height: '100%',
+          width: '100%',
+          videoId: videoId,
+          playerVars: {
+            'autoplay': 1,
+            'rel': 0,
+            'modestbranding': 1,
+            'playsinline': 1,
+            'fs': 1
+          },
+          events: {
+            'onReady': function(event) {
+              if (safetyTimeoutId) {
+                clearTimeout(safetyTimeoutId);
+                safetyTimeoutId = null;
+              }
+              loader.style.display = 'none';
+              videoContainer.style.display = 'block';
+              event.target.playVideo();
+            },
+            'onError': function(event) {
+              console.error("YouTube Iframe API encountered error code:", event.data);
+              showFallback();
+            }
+          }
+        });
+      } catch (err) {
+        console.error("Failed to construct YT.Player instance:", err);
+        showFallback();
+      }
+    }
+
+    // Trigger on facade click or keypress (accessibility support)
+    function startTrailerLoad() {
+      // Transition UI to loading state
+      facade.style.display = 'none';
+      loader.style.display = 'flex';
+
+      // Safety timeout: 8 seconds to load script and initialize
+      safetyTimeoutId = setTimeout(function() {
+        console.warn("YouTube API load timed out after 8 seconds.");
+        showFallback();
+      }, 8000);
+
+      // Load YouTube Player API script dynamically if not already present
+      if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+        let tag = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
+        if (!tag) {
+          tag = document.createElement('script');
+          tag.src = "https://www.youtube.com/iframe_api";
+          const firstScriptTag = document.getElementsByTagName('script')[0];
+          firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        }
+
+        // Connect the global callback hook required by the YouTube API
+        window.onYouTubeIframeAPIReady = function() {
+          initPlayer();
+        };
+      } else {
+        initPlayer();
+      }
+    }
+
+    // Add event listeners for click and Enter key
+    facade.addEventListener('click', startTrailerLoad);
+    facade.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        startTrailerLoad();
+      }
+    });
+  });
+</script>
 {% endblock %}

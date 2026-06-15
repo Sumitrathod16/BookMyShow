@@ -16,33 +16,15 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
     />
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/site.css' %}" />
     <style>
       body {
         font-family: Arial, sans-serif;
-      }
-      .navbar {
-        background-color: #fff;
-        padding: 10px 20px;
+        background-color: #f8f9fa;
       }
       .navbar-brand img {
         height: 40px;
-      }
-      .navbar-nav .nav-link {
-        color: #000;
-      }
-      .banner {
-        background-color: #f8f9fa;
-        padding: 20px;
-        text-align: center;
-      }
-      .banner img {
-        max-width: 100%;
-        height: auto;
-      }
-      .section-title {
-        font-size: 24px;
-        font-weight: bold;
-        margin: 20px 0;
       }
       .card img {
         height: 200px;
@@ -69,6 +51,7 @@
         color: #28a745;
       }
     </style>
+    {% block extra_css %}{% endblock %}
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -130,7 +113,22 @@
       </div>
     </nav>
 
-    <div class="container">{% block content %} {% endblock %}</div>
+    {% block before_content %}{% endblock %}
+
+    {% if messages %}
+    <div class="container mt-3">
+      {% for message in messages %}
+      <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="container">{% block content %}{% endblock %}</div>
     <footer class="footer mt-5">
       <div class="container">
         <div class="row">
@@ -144,10 +142,13 @@
           <div class="col-md-4 mb-4 mb-md-0">
             <h5>Quick Links</h5>
             <ul class="list-unstyled">
-              <li><a href="#">Home</a></li>
-              <li><a href="#">Movies</a></li>
-              <li><a href="#">Book Tickets</a></li>
-              <li><a href="#">Contact</a></li>
+              <li><a href="/">Home</a></li>
+              <li><a href="/movies/">Movies</a></li>
+              {% if user.is_authenticated %}
+              <li><a href="{% url 'profile' %}">My Bookings</a></li>
+              {% else %}
+              <li><a href="{% url 'login' %}">Login</a></li>
+              {% endif %}
             </ul>
           </div>
           <div class="col-md-4">
@@ -161,12 +162,13 @@
         </div>
         <hr class="mt-4 mb-4" />
         <div class="text-center">
-          <p>&copy; 2024 Cinema Booking. All rights reserved.</p>
+          <p>&copy; 2026 BookMySeat. All rights reserved.</p>
         </div>
       </div>
     </footer>
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    {% block extra_js %}{% endblock %}
   </body>
 </html>
