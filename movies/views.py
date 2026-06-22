@@ -92,11 +92,30 @@ def theater_list(request, movie_id):
 
 
 def _seat_selection_context(theater, seats, error=None):
+    # Natural sort key: sort by row letter alphabetically, then by seat number numerically
+    def natural_sort_key(seat):
+        num = seat.seat_number
+        if not num:
+            return ('', 0)
+        row = num[0].upper()
+        # Extract digits from the rest of the string
+        digits = ''.join(c for c in num[1:] if c.isdigit())
+        val = int(digits) if digits else 0
+        return (row, val)
+        
+    sorted_seats = sorted(seats, key=natural_sort_key)
+    
+    # Attach row and label attributes dynamically for template grouping
+    for seat in sorted_seats:
+        seat.row_letter = seat.seat_number[0].upper() if seat.seat_number else ''
+        seat.number_label = seat.seat_number[1:] if seat.seat_number else ''
+        
     return {
         'theater': theater,
-        'seats': seats.order_by('seat_number'),
+        'seats': sorted_seats,
         'error': error,
     }
+
 
 
 @login_required(login_url='/login/')

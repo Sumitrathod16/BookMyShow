@@ -67,8 +67,8 @@ class Command(BaseCommand):
             )
             theaters.append(theater)
         Theater.objects.bulk_create(theaters)
-        # Fetch the newly created 200 theaters
-        theaters = list(Theater.objects.order_by('-id')[:200])
+        # Fetch the newly created 200 theaters with their movies
+        theaters = list(Theater.objects.select_related('movie').order_by('-id')[:200])
         self.stdout.write(f"Created {len(theaters)} theaters.")
 
         # 5. Create Seats (250 seats per theater = 50,000 seats total)
@@ -103,6 +103,9 @@ class Command(BaseCommand):
         
         orders_batch = []
         bookings_batch = []
+        
+        # Create a mapping of theater ID to theater object for memory lookup to prevent N+1 queries
+        theater_map = {t.id: t for t in theaters}
         
         # Distribute seats into orders of size 1 to 4
         seat_index = 0
@@ -153,7 +156,7 @@ class Command(BaseCommand):
                     booking_status = b_st
                     break
                     
-            theater = order_seats[0].theater
+            theater = theater_map[order_seats[0].theater_id]
             amount = order_size * theater.ticket_price
             payment_id = f"MOCK_PAY_{uuid.uuid4().hex.upper()}"
             idempotency_key = f"seed_{payment_id}_{order_counter}"

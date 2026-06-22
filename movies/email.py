@@ -2,6 +2,7 @@ import logging
 import json
 from datetime import datetime
 from typing import Dict, List, Any, Optional
+# pyrefly: ignore [missing-import]
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.template.loader import render_to_string

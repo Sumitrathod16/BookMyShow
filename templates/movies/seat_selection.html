@@ -26,24 +26,29 @@
           <form method="POST" id="seatForm">
             {% csrf_token %}
             <div class="mb-4" id="seatMap">
-              {% regroup seats by seat_number|slice:":1" as grouped %}
-              {% for seat in seats %}
-              <div class="seat {% if seat.is_booked %}sold{% endif %}" data-seat-id="{{ seat.id }}">
-                {% if not seat.is_booked %}
-                <input
-                  type="checkbox"
-                  name="seats"
-                  value="{{ seat.id }}"
-                  class="d-none seat-checkbox"
-                  id="seat-{{ seat.id }}"
-                />
-                <label
-                  for="seat-{{ seat.id }}"
-                  class="w-100 h-100 d-flex align-items-center justify-content-center mb-0"
-                >{{ seat.seat_number }}</label>
-                {% else %}
-                <span class="d-flex align-items-center justify-content-center w-100 h-100">{{ seat.seat_number }}</span>
-                {% endif %}
+              {% regroup seats by row_letter as seat_rows %}
+              {% for row in seat_rows %}
+              <div class="seat-map-row">
+                <div class="seat-row-label">{{ row.grouper }}</div>
+                {% for seat in row.list %}
+                <div class="seat {% if seat.is_booked %}sold{% endif %}" data-seat-id="{{ seat.id }}">
+                  {% if not seat.is_booked %}
+                  <input
+                    type="checkbox"
+                    name="seats"
+                    value="{{ seat.id }}"
+                    class="d-none seat-checkbox"
+                    id="seat-{{ seat.id }}"
+                  />
+                  <label
+                    for="seat-{{ seat.id }}"
+                    class="w-100 h-100 d-flex align-items-center justify-content-center mb-0"
+                  >{{ seat.number_label }}</label>
+                  {% else %}
+                  <span class="d-flex align-items-center justify-content-center w-100 h-100">{{ seat.number_label }}</span>
+                  {% endif %}
+                </div>
+                {% endfor %}
               </div>
               {% endfor %}
             </div>
@@ -80,9 +85,15 @@
 <style>
   #seatMap {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
     max-width: 100%;
+    overflow-x: auto;
+    padding: 15px 5px;
+    background-color: #fcfcfc;
+    border-radius: 8px;
+    border: 1px dashed #ddd;
   }
 </style>
 {% endblock %}
@@ -125,6 +136,19 @@
           seat.classList.remove('selected');
         }
         updateSummary();
+      });
+    });
+
+    // Allow clicking the seat div wrapper itself to toggle selection
+    document.querySelectorAll('.seat:not(.sold)').forEach(function (seat) {
+      seat.addEventListener('click', function (e) {
+        if (e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') {
+          var cb = this.querySelector('.seat-checkbox');
+          if (cb) {
+            cb.checked = !cb.checked;
+            cb.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
       });
     });
 

@@ -14,9 +14,13 @@ from pathlib import Path
 import os
 import dj_database_url
 import logging.config
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load local environment variables from .env
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 
 # Quick-start development settings - unsuitable for production
@@ -211,6 +215,24 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# If running on Vercel, copy SQLite database to /tmp so it is writable.
+if os.environ.get('VERCEL') == '1':
+    import shutil
+    db_path = BASE_DIR / 'db.sqlite3'
+    writable_db_path = Path('/tmp') / 'db.sqlite3'
+    
+    if db_path.exists() and not writable_db_path.exists():
+        try:
+            shutil.copy2(db_path, writable_db_path)
+            os.chmod(writable_db_path, 0o666)
+        except Exception as e:
+            print(f"Error copying database to /tmp: {e}")
+            
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': writable_db_path,
+    }
 
 # Use PostgreSQL if DATABASE_URL is set (production), otherwise use SQLite (development)
 if os.environ.get('DATABASE_URL'):
