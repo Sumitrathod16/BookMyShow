@@ -30,6 +30,45 @@ LANGUAGE_NAMES = [
     'Kannada', 'Bengali', 'Marathi', 'Punjabi', 'Gujarati',
 ]
 
+SPECIFIC_MOVIES = [
+    {
+        'name': 'Avengers',
+        'rating': 8.0,
+        'cast': 'Robert Downey Jr., Chris Evans, Mark Ruffalo, Chris Hemsworth',
+        'description': "Earth's mightiest heroes must come together and learn to fight as a team if they are to stop the mischievous Loki and his alien army from enslaving humanity.",
+        'trailer_url': 'https://www.youtube.com/watch?v=eOrNdBpGMv8',
+        'genres': ['Action', 'Sci-Fi'],
+        'languages': ['English', 'Hindi', 'Tamil', 'Telugu'],
+    },
+    {
+        'name': 'Interstellar',
+        'rating': 8.7,
+        'cast': 'Matthew McConaughey, Anne Hathaway, Jessica Chastain',
+        'description': "When Earth becomes uninhabitable, a team of explorers travels through a wormhole in space in an attempt to ensure humanity's survival.",
+        'trailer_url': 'https://www.youtube.com/watch?v=zSWdZAZE3nk',
+        'genres': ['Sci-Fi', 'Drama'],
+        'languages': ['English', 'Hindi'],
+    },
+    {
+        'name': 'Inception',
+        'rating': 8.8,
+        'cast': 'Leonardo DiCaprio, Joseph Gordon-Levitt, Elliot Page',
+        'description': "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
+        'trailer_url': 'https://www.youtube.com/watch?v=YoHD9XEInc0',
+        'genres': ['Sci-Fi', 'Action', 'Thriller'],
+        'languages': ['English', 'Hindi'],
+    },
+    {
+        'name': 'Tenet',
+        'rating': 7.3,
+        'cast': 'John David Washington, Robert Pattinson, Elizabeth Debicki',
+        'description': "Armed with only one word, Tenet, and fighting for the survival of the entire world, a Protagonist journeys through a twilight world of international espionage on a mission that will unfold in something beyond real time.",
+        'trailer_url': 'https://www.youtube.com/watch?v=LdOM0x0XDwM',
+        'genres': ['Sci-Fi', 'Action', 'Thriller'],
+        'languages': ['English', 'Hindi'],
+    },
+]
+
 
 class Command(BaseCommand):
     help = 'Seed genres, languages, and movies for scalable filter testing.'
@@ -60,6 +99,34 @@ class Command(BaseCommand):
             deleted, _ = Movie.objects.all().delete()
             self.stdout.write(self.style.WARNING(f'Deleted {deleted} movies.'))
 
+        placeholder = ContentFile(_PLACEHOLDER_PNG, name='placeholder.png')
+
+        # Ensure specific movies are seeded first
+        with transaction.atomic():
+            for spec in SPECIFIC_MOVIES:
+                movie, created = Movie.objects.get_or_create(
+                    name=spec['name'],
+                    defaults={
+                        'rating': spec['rating'],
+                        'cast': spec['cast'],
+                        'description': spec['description'],
+                        'trailer_url': spec['trailer_url'],
+                    }
+                )
+                if created:
+                    movie.image.save(f"{spec['name'].lower()}_placeholder.png", placeholder, save=True)
+                    # Add genres
+                    for g_name in spec['genres']:
+                        genre = next((g for g in genres if g.name == g_name), None)
+                        if genre:
+                            movie.genres.add(genre)
+                    # Add languages
+                    for l_name in spec['languages']:
+                        lang = next((l for l in languages if l.name == l_name), None)
+                        if lang:
+                            movie.languages.add(lang)
+                    self.stdout.write(f"Seeded specific movie: {spec['name']}")
+
         existing = Movie.objects.count()
         to_create = max(0, count - existing)
         if to_create == 0:
@@ -69,7 +136,6 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(f'Creating {to_create} movies ({existing} already exist)...')
-        placeholder = ContentFile(_PLACEHOLDER_PNG, name='placeholder.png')
         batch = []
         batch_size = 500
 
