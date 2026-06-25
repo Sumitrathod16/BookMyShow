@@ -6,9 +6,11 @@ Usage:
 """
 
 import base64
+import os
 import random
 from io import BytesIO
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -69,6 +71,24 @@ SPECIFIC_MOVIES = [
     },
 ]
 
+SPECIFIC_IMAGES = {
+    'Avengers': 'movies/635217f73e372771013edb4c-the-avengers-poster-marvel-movie-canvas1.jpg',
+    'Inception': 'movies/Inception.webp',
+    'Tenet': 'movies/Tenet.webp',
+    'Interstellar': 'movies/8f7cd92b0bb7ce2b0eae88ee539a52f23199c67131a8c15f0ecbc0d4e71940621.jpg'
+}
+
+GENERAL_IMAGES = [
+    'movies/Batman.webp',
+    'movies/Spiderman.webp',
+    'movies/1764918064_Dhurandhar-2-2025-11-ada570935d381fd50c66c58a1979f4bd1.jpg',
+    'movies/download.jpeg',
+    'movies/IQsBhg9t747dLhjXfsChIGZy4XfugER8BF0Gw5MDhIcnY5nTA1.jpg',
+    'movies/f5VK0h2bprRhR6iRrixcuEfRxSUF4l14F66vQYrsJGmKZ5nTA1.jpg',
+    'movies/feUv2SYumXlT8E2RhzlYbZxfEGLG5AVrCPxP1gmAaCusxyPnA1.jpg',
+    'movies/OIP1.webp'
+]
+
 
 class Command(BaseCommand):
     help = 'Seed genres, languages, and movies for scalable filter testing.'
@@ -113,8 +133,21 @@ class Command(BaseCommand):
                         'trailer_url': spec['trailer_url'],
                     }
                 )
+                
+                image_assigned = False
+                target_image = SPECIFIC_IMAGES.get(spec['name'])
+                if target_image:
+                    full_image_path = os.path.join(settings.MEDIA_ROOT, target_image)
+                    if os.path.exists(full_image_path):
+                        movie.image = target_image
+                        movie.save()
+                        image_assigned = True
+
+                if not image_assigned:
+                    if not movie.image or 'placeholder' in movie.image.name:
+                        movie.image.save(f"{spec['name'].lower()}_placeholder.png", placeholder, save=True)
+
                 if created:
-                    movie.image.save(f"{spec['name'].lower()}_placeholder.png", placeholder, save=True)
                     # Add genres
                     for g_name in spec['genres']:
                         genre = next((g for g in genres if g.name == g_name), None)
@@ -139,6 +172,12 @@ class Command(BaseCommand):
         batch = []
         batch_size = 500
 
+        # Cache available general images to avoid disk checks per iteration
+        available_general = [
+            img for img in GENERAL_IMAGES
+            if os.path.exists(os.path.join(settings.MEDIA_ROOT, img))
+        ]
+
         with transaction.atomic():
             for i in range(to_create):
                 n = existing + i + 1
@@ -148,7 +187,10 @@ class Command(BaseCommand):
                     cast='Seed Cast',
                     description='Auto-generated for filter performance testing.',
                 )
-                movie.image.save(f'seed_{n:05d}.png', placeholder, save=False)
+                if available_general:
+                    movie.image = random.choice(available_general)
+                else:
+                    movie.image.save(f'seed_{n:05d}.png', placeholder, save=False)
                 batch.append(movie)
 
                 if len(batch) >= batch_size:
