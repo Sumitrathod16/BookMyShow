@@ -182,6 +182,7 @@ class EmailQueueItem(models.Model):
     """
     class Status(models.TextChoices):
         PENDING = 'pending', 'Pending'
+        SENDING = 'sending', 'Sending'
         SENT = 'sent', 'Sent'
         FAILED = 'failed', 'Failed'
 

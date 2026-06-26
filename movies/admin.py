@@ -101,6 +101,7 @@ class EmailQueueItemAdmin(admin.ModelAdmin):
         """Display status with color coding."""
         colors = {
             EmailQueueItem.Status.PENDING: '#FFA500',  # Orange
+            EmailQueueItem.Status.SENDING: '#17a2b8',  # Teal/Blue
             EmailQueueItem.Status.SENT: '#28a745',     # Green
             EmailQueueItem.Status.FAILED: '#dc3545',   # Red
         }
